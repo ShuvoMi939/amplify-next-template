@@ -10,6 +10,11 @@
       "StackName": "amplify-nirdeshona-dev-a8de0",
       "StackId": "arn:aws:cloudformation:ap-south-1:536697255493:stack/amplify-nirdeshona-dev-a8de0/49120250-22d9-11f0-b559-0a9beb6e58b7",
       "AmplifyAppId": "di76p9gf7oah4"
+    },
+    "categories": {
+      "auth": {
+        "nirdeshonab7ba4a3b": {}
+      }
     }
   }
 }
