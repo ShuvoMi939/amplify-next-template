@@ -1,5 +1,7 @@
 // app/components/Header.tsx
 
+"use client"; // Add this line to mark this component as a client component
+
 import Link from "next/link";
 import { useState } from "react";
 import { FaSearch, FaUser } from "react-icons/fa"; // Example icons
@@ -12,9 +14,9 @@ const Header = () => {
       <div className="max-w-screen-xl mx-auto flex justify-between items-center">
         <div className="flex items-center space-x-4">
           <img src="/favicon.ico" alt="Logo" className="h-8 w-8" />
-          <Link href="/" className="text-2xl font-bold">MySite</Link>
-          <Link href="/about" className="hover:text-gray-300">About</Link>
-          <Link href="/login" className="hover:text-gray-300">Login</Link>
+          <Link href="/" className="text-2xl font-bold">
+            MySite
+          </Link>
         </div>
 
         <div className="flex items-center space-x-6">
