@@ -1,7 +1,5 @@
 // app/layout.tsx
 
-"use client";
-
 import { Amplify } from "aws-amplify";
 import awsExports from "../src/aws-exports"; // Correct import
 import Header from "./components/Header";
