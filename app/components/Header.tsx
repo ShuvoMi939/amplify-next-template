@@ -1,5 +1,3 @@
-// app/components/Header.tsx
-
 "use client"; // Add this line to mark this component as a client component
 
 import Link from "next/link";
@@ -20,6 +18,23 @@ const Header = () => {
         </div>
 
         <div className="flex items-center space-x-6">
+          {/* Navigation Links */}
+          <nav className="flex space-x-6">
+            <Link href="/" className="text-lg hover:text-gray-200">
+              Home
+            </Link>
+            <Link href="/about" className="text-lg hover:text-gray-200">
+              About
+            </Link>
+            <Link href="/services" className="text-lg hover:text-gray-200">
+              Services
+            </Link>
+            <Link href="/contact" className="text-lg hover:text-gray-200">
+              Contact
+            </Link>
+          </nav>
+
+          {/* Search Box */}
           <div className="relative">
             <input
               type="text"
@@ -30,6 +45,8 @@ const Header = () => {
             />
             <FaSearch className="absolute top-2 right-2 text-gray-500" />
           </div>
+
+          {/* User Profile Link */}
           <Link href="/login">
             <FaUser className="text-xl" />
           </Link>
