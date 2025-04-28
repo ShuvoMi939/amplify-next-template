@@ -1,9 +1,16 @@
 // app/layout.tsx
 
-import Header from './components/Header';
-import Footer from './components/Footer';
+"use client";
+
+import { Amplify } from "aws-amplify";
+import awsExports from "../src/aws-exports"; // Correct import
+import Header from "./components/Header";
+import Footer from "./components/Footer";
 import { Inter } from "next/font/google";
-import './globals.css'; // Import global CSS
+import "./globals.css";
+
+// Configure Amplify once
+Amplify.configure(awsExports);
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,7 +28,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <Header />
-        <main>{children}</main>
+        <main className="min-h-screen">{children}</main>
         <Footer />
       </body>
     </html>
