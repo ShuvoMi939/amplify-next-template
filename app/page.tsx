@@ -32,21 +32,24 @@ export default function App() {
   }
 
   return (
-    <main>
-      <h1>My todos</h1>
-      <button onClick={createTodo}>+ new</button>
-      <ul>
+    <main className="flex flex-col items-center justify-center p-4">
+      <h1 className="text-2xl font-bold">My todos</h1>
+      <button
+        onClick={createTodo}
+        className="mt-4 px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+      >
+        + New Todo
+      </button>
+      <ul className="mt-4 w-full max-w-md p-4 border border-gray-300 rounded">
         {todos.map((todo) => (
-          <li key={todo.id}>{todo.content}</li>
+          <li
+            key={todo.id}
+            className="bg-white p-2 rounded mb-2 hover:bg-gray-200"
+          >
+            {todo.content}
+          </li>
         ))}
       </ul>
-      <div>
-        🥳 App successfully hosted. Try creating a new todo.
-        <br />
-        <a href="https://docs.amplify.aws/nextjs/start/quickstart/nextjs-app-router-client-components/">
-          Review next steps of this tutorial.
-        </a>
-      </div>
     </main>
   );
 }
