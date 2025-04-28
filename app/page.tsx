@@ -30,6 +30,10 @@ export default function App() {
       content: window.prompt("Todo content"),
     });
   }
+    
+  function deleteTodo(id: string) {
+    client.models.Todo.delete({ id })
+  }
 
   return (
     <main className="flex flex-col items-center justify-center p-4">
@@ -43,6 +47,7 @@ export default function App() {
       <ul className="mt-4 w-full max-w-md p-4 border border-gray-300 rounded">
         {todos.map((todo) => (
           <li
+            onClick={() => deleteTodo(todo.id)}
             key={todo.id}
             className="bg-white p-2 rounded mb-2 hover:bg-gray-200"
           >
