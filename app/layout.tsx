@@ -4,7 +4,6 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import { Inter } from "next/font/google";
 import './globals.css'; // Import global CSS
-import "../src/amplify-config"; // this initializes Amplify
 
 const inter = Inter({ subsets: ["latin"] });
 
