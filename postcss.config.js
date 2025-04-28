@@ -1,6 +1,7 @@
 module.exports = {
-  plugins: {
-    tailwindcss: {},   // Correct way to include Tailwind CSS
-    autoprefixer: {},  // Autoprefixer is optional but recommended
-  },
-}
+    plugins: [
+      'tailwindcss', // Ensure tailwindcss is listed here as a plugin.
+      'autoprefixer',
+    ]
+  };
+  
