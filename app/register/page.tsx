@@ -197,7 +197,7 @@ export default function Register() {
           </button>
           <button
             onClick={() => router.push("/reset-password")}
-            className="text-blue-500 hover:underline block"
+            className="text-blue-500 hover:underline"
           >
             Forgot password?
           </button>
