@@ -36,7 +36,7 @@ export default function Dashboard() {
       <div className="text-center mt-20 text-red-600">
         You must be logged in to access the dashboard.
         <div className="mt-4">
-          <a href="/login" className="text-blue-500 underline">Go to Login</a>
+          <link href="/login" className="text-blue-500 underline">Go to Login</link>
         </div>
       </div>
     );
