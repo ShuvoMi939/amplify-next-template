@@ -13,7 +13,7 @@ const Header = () => {
         <div className="flex items-center space-x-4">
           <img src="/favicon.ico" alt="Logo" className="h-8 w-8" />
           <Link href="/" className="text-2xl font-bold">
-            MySite
+            Nirdeshona
           </Link>
         </div>
 
