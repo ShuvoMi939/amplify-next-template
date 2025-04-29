@@ -29,20 +29,11 @@ export default function Register() {
   const [error, setError] = useState("");
   const [confirmationResult, setConfirmationResult] = useState<any>(null);
 
-  const [resendTimer, setResendTimer] = useState<number>(
-    Number(localStorage.getItem("resendTimer")) || 0
-  );
-
-  const resendKey = mode === "email" ? "pendingEmail" : "pendingPhone";
+  const [resendTimer, setResendTimer] = useState<number>(0);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const remaining = Number(localStorage.getItem("resendTimer")) || 0;
-      if (remaining > 0) {
-        const newTime = remaining - 1;
-        localStorage.setItem("resendTimer", String(newTime));
-        setResendTimer(newTime);
-      }
+      setResendTimer((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(interval);
   }, []);
@@ -80,8 +71,6 @@ export default function Register() {
               },
             },
           });
-          localStorage.setItem("pendingEmail", email);
-          localStorage.setItem("resendTimer", "60");
           setResendTimer(60);
           setStep("confirm");
           setMessage("OTP sent to email.");
@@ -89,11 +78,8 @@ export default function Register() {
           if (err.name === "UsernameExistsException") {
             try {
               await signIn({ username: email, password });
-              localStorage.removeItem("pendingEmail");
               router.push("/dashboard");
             } catch {
-              localStorage.setItem("pendingEmail", email);
-              localStorage.setItem("resendTimer", "60");
               setResendTimer(60);
               setStep("confirm");
               setMessage("Account exists but not confirmed. OTP sent again.");
@@ -107,8 +93,6 @@ export default function Register() {
         const appVerifier = window.recaptchaVerifier;
         const result = await signInWithPhoneNumber(auth, phone, appVerifier);
         setConfirmationResult(result);
-        localStorage.setItem("pendingPhone", phone);
-        localStorage.setItem("resendTimer", "60");
         setResendTimer(60);
         setStep("confirm");
         setMessage("OTP sent to phone number.");
@@ -124,32 +108,16 @@ export default function Register() {
         await confirmSignUp({ username: email, confirmationCode: code });
         const { isSignedIn } = await signIn({ username: email, password });
         if (isSignedIn) {
-          localStorage.removeItem("pendingEmail");
           router.push("/dashboard");
         }
       } else if (confirmationResult) {
         await confirmationResult.confirm(code);
-        localStorage.removeItem("pendingPhone");
         router.push("/dashboard");
       }
     } catch (err: any) {
       setError("Incorrect OTP or already confirmed.");
     }
   };
-
-  useEffect(() => {
-    const pendingEmail = localStorage.getItem("pendingEmail");
-    const pendingPhone = localStorage.getItem("pendingPhone");
-    if (mode === "email" && pendingEmail) {
-      setEmail(pendingEmail);
-      setStep("confirm");
-    } else if (mode === "phone" && pendingPhone) {
-      setPhone(pendingPhone);
-      setStep("confirm");
-    } else {
-      setStep("register");
-    }
-  }, [mode]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
@@ -161,6 +129,7 @@ export default function Register() {
               setMode(mode === "email" ? "phone" : "email");
               setError("");
               setMessage("");
+              setStep("register");
             }}
             className="text-sm text-blue-500 underline"
           >
