@@ -13,8 +13,8 @@ Amplify.configure(awsExports);
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "MySite",
-  description: "A sample Next.js site with reloadless page navigation",
+  title: "Nirdeshona",
+  description: "Your Trusted Partner",
 };
 
 export default function RootLayout({
