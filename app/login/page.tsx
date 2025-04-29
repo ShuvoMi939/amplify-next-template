@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { signIn } from "aws-amplify/auth";
+import { useRouter } from "next/navigation";
 
 export default function Login() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -15,12 +17,10 @@ export default function Login() {
     setSuccess("");
 
     try {
-      const user = await signIn({ username: email, password });
-      console.log("User signed in:", user);
+      await signIn({ username: email, password });
       setSuccess("Login successful!");
-      // Redirect to a dashboard page or home if needed
+      // router.push("/dashboard"); // redirect as needed
     } catch (err: any) {
-      console.error("Login error:", err);
       setError(err.message || "An error occurred");
     }
   };
@@ -31,34 +31,18 @@ export default function Login() {
       <p className="mb-4">Login to your account.</p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          type="email"
-          placeholder="Email"
-          className="p-2 w-full rounded border"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          className="p-2 w-full rounded border"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <button type="submit" className="w-full py-2 bg-blue-500 text-white rounded">
-          Login
-        </button>
+        <input type="email" placeholder="Email" className="p-2 w-full rounded border" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <input type="password" placeholder="Password" className="p-2 w-full rounded border" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        <button type="submit" className="w-full py-2 bg-blue-500 text-white rounded">Login</button>
       </form>
 
       {error && <p className="text-red-500 mt-4">{error}</p>}
       {success && <p className="text-green-500 mt-4">{success}</p>}
 
-      <div className="mt-6 text-center">
-        <a href="/register" className="text-blue-500 hover:underline">Create an account</a>
+      <div className="mt-6 text-center space-y-2">
+        <button onClick={() => router.push("/register")} className="text-blue-500 hover:underline">Create an account</button>
         <br />
-        <a href="/reset-password" className="text-blue-500 hover:underline">Forgot password?</a>
+        <button onClick={() => router.push("/reset-password")} className="text-blue-500 hover:underline">Forgot password?</button>
       </div>
     </section>
   );
