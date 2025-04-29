@@ -2,25 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { fetchAuthSession, signOut } from "aws-amplify/auth";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function Dashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [userEmail, setUserEmail] = useState<string>("");
   const router = useRouter();
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const session = await fetchAuthSession();
-        const email =
-          session.tokens?.idToken?.payload?.email ||
-          session.tokens?.accessToken?.payload?.username ||
-          "";
         if (session.tokens?.idToken) {
           setIsAuthenticated(true);
-          setUserEmail(email);
         } else {
           setIsAuthenticated(false);
         }
@@ -29,22 +23,22 @@ export default function Dashboard() {
         setIsAuthenticated(false);
       }
     };
-
     checkAuth();
   }, []);
 
   const handleLogout = async () => {
     try {
       await signOut();
+      setIsAuthenticated(false);
       router.push("/login");
-    } catch (err) {
-      console.error("Logout error:", err);
+    } catch (error) {
+      console.error("Logout error:", error);
     }
   };
 
   if (isAuthenticated === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500 text-lg">
+      <div className="min-h-screen flex items-center justify-center bg-gray-100 text-gray-600">
         Checking session...
       </div>
     );
@@ -52,9 +46,15 @@ export default function Dashboard() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center text-center text-red-600 px-4">
-        <p className="text-xl font-semibold">You must be logged in to access the dashboard.</p>
-        <Link href="/login" className="mt-4 text-blue-500 underline text-base">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white text-center px-4">
+        <h1 className="text-3xl font-bold text-gray-800 mb-4">Access Restricted 🔒</h1>
+        <p className="text-gray-600 mb-6">
+          You must be logged in to access the dashboard.
+        </p>
+        <Link
+          href="/login"
+          className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+        >
           Go to Login
         </Link>
       </div>
@@ -62,43 +62,48 @@ export default function Dashboard() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 px-6 py-10">
-      <div className="max-w-4xl mx-auto">
-        <header className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-gray-800">Welcome 👋</h1>
-          <p className="text-lg text-gray-600 mt-2">
-            Logged in as <strong>{userEmail}</strong>
-          </p>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 px-4 py-10">
+      <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-8">
+        <div className="flex justify-between items-center border-b pb-4 mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800">📊 Dashboard</h1>
+            <p className="text-sm text-gray-500">Welcome back! You're logged in.</p>
+          </div>
           <button
             onClick={handleLogout}
-            className="mt-4 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded shadow"
+            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
           >
-            Log out
+            Logout
           </button>
-        </header>
+        </div>
 
-        <section className="grid sm:grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-all duration-300">
-            <h2 className="text-xl font-semibold mb-2 text-gray-800">🔐 Secure Area</h2>
-            <p className="text-gray-600 text-sm">This section is only accessible to authenticated users.</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="p-4 bg-gray-50 border rounded-lg shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-700">🔐 Secure Area</h2>
+            <p className="text-gray-600 text-sm mt-2">
+              This is a protected area. Only authenticated users can see this.
+            </p>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-all duration-300">
-            <h2 className="text-xl font-semibold mb-2 text-gray-800">📊 Your Stats</h2>
-            <p className="text-gray-600 text-sm">View your quiz results, activity logs, or learning progress.</p>
+          <div className="p-4 bg-gray-50 border rounded-lg shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-700">📈 Your Stats</h2>
+            <p className="text-gray-600 text-sm mt-2">
+              Add user-specific statistics, progress tracking, or activity here.
+            </p>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-all duration-300">
-            <h2 className="text-xl font-semibold mb-2 text-gray-800">⚙️ Settings</h2>
-            <p className="text-gray-600 text-sm">Manage your account settings and preferences.</p>
+          <div className="p-4 bg-gray-50 border rounded-lg shadow-sm col-span-1 md:col-span-2">
+            <h2 className="text-lg font-semibold text-gray-700">🧑 Profile Info</h2>
+            <p className="text-gray-600 text-sm mt-2">
+              Display user profile data here (e.g., name, email, role).
+            </p>
           </div>
+        </div>
 
-          <div className="bg-white p-6 rounded-lg shadow hover:shadow-md transition-all duration-300">
-            <h2 className="text-xl font-semibold mb-2 text-gray-800">📘 Help</h2>
-            <p className="text-gray-600 text-sm">Learn how to use the platform or contact support.</p>
-          </div>
-        </section>
+        <footer className="text-center text-sm text-gray-400 mt-12">
+          © {new Date().getFullYear()} YourSite. All rights reserved.
+        </footer>
       </div>
-    </main>
+    </div>
   );
 }
