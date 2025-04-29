@@ -195,6 +195,12 @@ export default function Register() {
           >
             Already have an account? Login
           </button>
+          <button
+            onClick={() => router.push("/reset-password")}
+            className="text-blue-500 hover:underline block"
+          >
+            Forgot password?
+          </button>
         </div>
       </div>
     </div>
