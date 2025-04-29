@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { signUp, confirmSignUp, resendSignUpCode } from "aws-amplify/auth";
+import { signUp, confirmSignUp, resendSignUpCode, signIn } from "aws-amplify/auth";
 import { useRouter } from "next/navigation";
 
 export default function Register() {
@@ -12,11 +12,10 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-
   const [code, setCode] = useState("");
+
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-
   const [timer, setTimer] = useState(0);
 
   useEffect(() => {
@@ -59,10 +58,17 @@ export default function Register() {
       setTimer(60);
     } catch (err: any) {
       if (err.name === "UsernameExistsException") {
-        // if user tried to register again without confirming
-        localStorage.setItem("pendingEmail", email);
-        setStep("confirm");
-        setMessage("Account already exists but not confirmed. Please confirm with the code.");
+        try {
+          // Try to sign in: if successful, means user already confirmed
+          await signIn({ username: email, password });
+          localStorage.removeItem("pendingEmail");
+          router.push("/login");
+        } catch (signInErr: any) {
+          // If sign-in fails, assume unconfirmed
+          localStorage.setItem("pendingEmail", email);
+          setStep("confirm");
+          setMessage("Account exists but not confirmed. Please enter the code.");
+        }
       } else {
         setError(err.message || "Registration failed.");
       }
@@ -77,8 +83,12 @@ export default function Register() {
     try {
       await confirmSignUp({ username: email, confirmationCode: code });
       localStorage.removeItem("pendingEmail");
-      setMessage("Email confirmed! Redirecting to login...");
-      setTimeout(() => router.push("/login"), 2000);
+
+      const user = await signIn({ username: email, password });
+      if (user?.isSignedIn) {
+        setMessage("Email confirmed and logged in! Redirecting...");
+        setTimeout(() => router.push("/dashboard"), 2000);
+      }
     } catch (err: any) {
       setError(err.message || "Confirmation failed.");
     }
@@ -188,16 +198,16 @@ export default function Register() {
         {error && <p className="text-sm text-red-600 mt-4">{error}</p>}
         {message && <p className="text-sm text-green-600 mt-4">{message}</p>}
 
-        <div className="mt-6 text-center text-sm">
+        <div className="mt-6 text-center text-sm space-y-1">
           <button
             onClick={() => router.push("/login")}
-            className="text-blue-500 hover:underline"
+            className="text-blue-500 hover:underline block"
           >
             Already have an account? Login
           </button>
           <button
             onClick={() => router.push("/reset-password")}
-            className="text-blue-500 hover:underline"
+            className="text-blue-500 hover:underline block"
           >
             Forgot password?
           </button>
