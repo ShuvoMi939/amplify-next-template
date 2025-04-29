@@ -32,6 +32,9 @@ const Header = () => {
             <Link href="/contact" className="text-lg hover:text-gray-200">
               Contact
             </Link>
+            <Link href="/dashboard" className="text-sm text-blue-500 hover:underline">
+              Dashboard
+            </Link>
           </nav>
 
           {/* Search Box */}
