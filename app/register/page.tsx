@@ -1,215 +1,256 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { signUp, confirmSignUp, resendSignUpCode, signIn } from "aws-amplify/auth";
+import { useEffect, useState } from "react";
+import { signUp, confirmSignUp, signIn } from "aws-amplify/auth";
 import { useRouter } from "next/navigation";
+import { auth, RecaptchaVerifier } from "@/src/firebase";
+import { signInWithPhoneNumber } from "firebase/auth";
+
+declare global {
+  interface Window {
+    recaptchaVerifier: any;
+  }
+}
 
 export default function Register() {
   const router = useRouter();
+
+  const [mode, setMode] = useState<"email" | "phone">("email");
   const [step, setStep] = useState<"register" | "confirm">("register");
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [timer, setTimer] = useState(0);
+  const [confirmationResult, setConfirmationResult] = useState<any>(null);
+
+  const [resendTimer, setResendTimer] = useState<number>(
+    Number(localStorage.getItem("resendTimer")) || 0
+  );
+
+  const resendKey = mode === "email" ? "pendingEmail" : "pendingPhone";
 
   useEffect(() => {
-    const storedEmail = localStorage.getItem("pendingEmail");
-    if (storedEmail) {
-      setEmail(storedEmail);
-      setStep("confirm");
-    }
+    const interval = setInterval(() => {
+      const remaining = Number(localStorage.getItem("resendTimer")) || 0;
+      if (remaining > 0) {
+        const newTime = remaining - 1;
+        localStorage.setItem("resendTimer", String(newTime));
+        setResendTimer(newTime);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    let interval: any;
-    if (timer > 0) {
-      interval = setInterval(() => setTimer((prev) => prev - 1), 1000);
+  const initRecaptcha = () => {
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
+        size: "invisible",
+        callback: () => {},
+      });
     }
-    return () => clearInterval(interval);
-  }, [timer]);
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setMessage("");
 
-    try {
-      await signUp({
-        username: email,
-        password,
-        options: {
-          userAttributes: {
-            email,
-            given_name: firstName,
-            family_name: lastName,
-          },
-        },
-      });
+    if (resendTimer > 0) {
+      setError(`Please wait ${resendTimer}s before trying again.`);
+      return;
+    }
 
-      localStorage.setItem("pendingEmail", email);
-      setStep("confirm");
-      setMessage("OTP sent! Please check your email.");
-      setTimer(60);
-    } catch (err: any) {
-      if (err.name === "UsernameExistsException") {
+    try {
+      if (mode === "email") {
         try {
-          // Try to sign in: if successful, means user already confirmed
-          await signIn({ username: email, password });
-          localStorage.removeItem("pendingEmail");
-          router.push("/login");
-        } catch (signInErr: any) {
-          // If sign-in fails, assume unconfirmed
+          await signUp({
+            username: email,
+            password,
+            options: {
+              userAttributes: {
+                email,
+                given_name: firstName,
+                family_name: lastName,
+              },
+            },
+          });
           localStorage.setItem("pendingEmail", email);
+          localStorage.setItem("resendTimer", "60");
+          setResendTimer(60);
           setStep("confirm");
-          setMessage("Account exists but not confirmed. Please enter the code.");
+          setMessage("OTP sent to email.");
+        } catch (err: any) {
+          if (err.name === "UsernameExistsException") {
+            try {
+              await signIn({ username: email, password });
+              localStorage.removeItem("pendingEmail");
+              router.push("/dashboard");
+            } catch {
+              localStorage.setItem("pendingEmail", email);
+              localStorage.setItem("resendTimer", "60");
+              setResendTimer(60);
+              setStep("confirm");
+              setMessage("Account exists but not confirmed. OTP sent again.");
+            }
+          } else {
+            setError(err.message || "Registration failed.");
+          }
         }
       } else {
-        setError(err.message || "Registration failed.");
-      }
-    }
-  };
-
-  const handleConfirm = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setMessage("");
-
-    try {
-      await confirmSignUp({ username: email, confirmationCode: code });
-      localStorage.removeItem("pendingEmail");
-
-      const user = await signIn({ username: email, password });
-      if (user?.isSignedIn) {
-        setMessage("Email confirmed and logged in! Redirecting...");
-        setTimeout(() => router.push("/dashboard"), 2000);
+        initRecaptcha();
+        const appVerifier = window.recaptchaVerifier;
+        const result = await signInWithPhoneNumber(auth, phone, appVerifier);
+        setConfirmationResult(result);
+        localStorage.setItem("pendingPhone", phone);
+        localStorage.setItem("resendTimer", "60");
+        setResendTimer(60);
+        setStep("confirm");
+        setMessage("OTP sent to phone number.");
       }
     } catch (err: any) {
-      setError(err.message || "Confirmation failed.");
+      setError(err.message || "OTP sending failed.");
     }
   };
 
-  const handleResend = async () => {
+  const handleVerifyOTP = async () => {
     try {
-      await resendSignUpCode({ username: email });
-      setMessage("A new code has been sent to your email.");
-      setTimer(60);
+      if (mode === "email") {
+        await confirmSignUp({ username: email, confirmationCode: code });
+        const { isSignedIn } = await signIn({ username: email, password });
+        if (isSignedIn) {
+          localStorage.removeItem("pendingEmail");
+          router.push("/dashboard");
+        }
+      } else if (confirmationResult) {
+        await confirmationResult.confirm(code);
+        localStorage.removeItem("pendingPhone");
+        router.push("/dashboard");
+      }
     } catch (err: any) {
-      setError(err.message || "Failed to resend code.");
+      setError("Incorrect OTP or already confirmed.");
     }
   };
 
-  const handleBackToRegister = () => {
-    localStorage.removeItem("pendingEmail");
-    setStep("register");
-    setMessage("");
-    setError("");
-    setCode("");
-  };
+  useEffect(() => {
+    const pendingEmail = localStorage.getItem("pendingEmail");
+    const pendingPhone = localStorage.getItem("pendingPhone");
+    if (mode === "email" && pendingEmail) {
+      setEmail(pendingEmail);
+      setStep("confirm");
+    } else if (mode === "phone" && pendingPhone) {
+      setPhone(pendingPhone);
+      setStep("confirm");
+    } else {
+      setStep("register");
+    }
+  }, [mode]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm p-8 bg-white rounded-xl shadow-md">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">
-          {step === "register" ? "Create an Account 📝" : "Confirm Your Email"}
-        </h2>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+      <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-6 space-y-4">
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-semibold">Register</h2>
+          <button
+            onClick={() => {
+              setMode(mode === "email" ? "phone" : "email");
+              setError("");
+              setMessage("");
+            }}
+            className="text-sm text-blue-500 underline"
+          >
+            Use {mode === "email" ? "Phone" : "Email"} Instead
+          </button>
+        </div>
 
-        {step === "register" ? (
-          <form onSubmit={handleRegister} className="space-y-4">
+        {step === "register" && (
+          <form onSubmit={handleRegister} className="space-y-3">
             <input
-              type="text"
-              placeholder="First Name"
-              className="w-full px-4 py-2 border rounded"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
+              placeholder="First Name"
+              className="w-full px-4 py-2 border rounded"
               required
             />
             <input
-              type="text"
-              placeholder="Last Name"
-              className="w-full px-4 py-2 border rounded"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
+              placeholder="Last Name"
+              className="w-full px-4 py-2 border rounded"
               required
             />
+
+            {mode === "email" ? (
+              <input
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Email"
+                className="w-full px-4 py-2 border rounded"
+                required
+              />
+            ) : (
+              <>
+                <input
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+880123456789"
+                  className="w-full px-4 py-2 border rounded"
+                  required
+                />
+                <div id="recaptcha-container"></div>
+              </>
+            )}
+
             <input
-              type="email"
-              placeholder="Email"
-              className="w-full px-4 py-2 border rounded"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              className="w-full px-4 py-2 border rounded"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              type="password"
+              className="w-full px-4 py-2 border rounded"
               required
             />
-            <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
-              Register
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleConfirm} className="space-y-4">
-            <input
-              type="email"
-              placeholder="Email"
-              className="w-full px-4 py-2 border rounded"
-              value={email}
-              disabled
-            />
-            <input
-              type="text"
-              placeholder="Verification Code"
-              className="w-full px-4 py-2 border rounded"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              required
-            />
-            <button className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">
-              Confirm Email
-            </button>
+
             <button
-              type="button"
-              onClick={handleResend}
-              className="w-full bg-gray-200 text-sm py-2 rounded mt-2"
-              disabled={timer > 0}
+              type="submit"
+              className="w-full bg-blue-600 text-white py-2 rounded disabled:opacity-50"
+              disabled={resendTimer > 0}
             >
-              {timer > 0 ? `Resend in ${timer}s` : "Resend Code"}
-            </button>
-            <button
-              type="button"
-              onClick={handleBackToRegister}
-              className="text-sm text-blue-500 underline mt-2 block text-center"
-            >
-              Back to Registration
+              {resendTimer > 0 ? `Wait ${resendTimer}s` : "Register"}
             </button>
           </form>
         )}
 
-        {error && <p className="text-sm text-red-600 mt-4">{error}</p>}
-        {message && <p className="text-sm text-green-600 mt-4">{message}</p>}
+        {step === "confirm" && (
+          <div className="space-y-3">
+            <input
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="Enter OTP"
+              className="w-full px-4 py-2 border rounded"
+            />
+            <button
+              onClick={handleVerifyOTP}
+              className="w-full bg-green-600 text-white py-2 rounded"
+            >
+              Confirm OTP
+            </button>
+          </div>
+        )}
 
-        <div className="mt-6 text-center text-sm space-y-1">
-          <button
-            onClick={() => router.push("/login")}
-            className="text-blue-500 hover:underline block"
-          >
-            Already have an account? Login
+        {message && <p className="text-sm text-green-600">{message}</p>}
+        {error && <p className="text-sm text-red-600">{error}</p>}
+
+        <div className="flex justify-between text-sm pt-2">
+          <button onClick={() => router.push("/login")} className="text-blue-500 underline">
+            Login
           </button>
-          <button
-            onClick={() => router.push("/reset-password")}
-            className="text-blue-500 hover:underline block"
-          >
-            Forgot password?
+          <button onClick={() => router.push("/reset")} className="text-blue-500 underline">
+            Forgot Password?
           </button>
         </div>
       </div>
