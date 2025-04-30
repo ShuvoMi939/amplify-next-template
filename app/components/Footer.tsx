@@ -66,7 +66,7 @@ const Footer = () => {
       </div>
 
       <div className="border-t border-gray-700 mt-12 pt-6 text-center text-gray-400 text-xs">
-        &copy; {new Date().getFullYear()} Nirdeshona Inc. All rights reserved.
+        &copy; {new Date().getFullYear()} Nirdeshona. All rights reserved.
       </div>
     </footer>
   );
