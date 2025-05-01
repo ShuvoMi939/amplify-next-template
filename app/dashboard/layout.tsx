@@ -1,19 +1,18 @@
-// app/dashboard/layout.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { fetchAuthSession, signOut } from "aws-amplify/auth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  CogIcon,
-  UserIcon,
-  HomeIcon,
-  BookOpenIcon,
-  ChatAlt2Icon,
-  SupportIcon,
-  LogoutIcon
-} from "@heroicons/react/outline";
+
+// Heroicons v2 imports
+import HomeIcon from "@heroicons/react/24/outline/HomeIcon";
+import UserIcon from "@heroicons/react/24/outline/UserIcon";
+import Cog6ToothIcon from "@heroicons/react/24/outline/Cog6ToothIcon";
+import BookOpenIcon from "@heroicons/react/24/outline/BookOpenIcon";
+import ChatBubbleLeftRightIcon from "@heroicons/react/24/outline/ChatBubbleLeftRightIcon";
+import LifebuoyIcon from "@heroicons/react/24/outline/LifebuoyIcon";
+import ArrowLeftOnRectangleIcon from "@heroicons/react/24/outline/ArrowLeftOnRectangleIcon";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -77,16 +76,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="space-y-3 text-gray-700">
           <NavLink href="/dashboard" icon={<HomeIcon className="w-5 h-5" />} label="Home" />
           <NavLink href="/dashboard/profile" icon={<UserIcon className="w-5 h-5" />} label="Profile" />
-          <NavLink href="/dashboard/settings" icon={<CogIcon className="w-5 h-5" />} label="Settings" />
-          <NavLink href="/dashboard/feed" icon={<ChatAlt2Icon className="w-5 h-5" />} label="Feed" />
+          <NavLink href="/dashboard/settings" icon={<Cog6ToothIcon className="w-5 h-5" />} label="Settings" />
+          <NavLink href="/dashboard/feed" icon={<ChatBubbleLeftRightIcon className="w-5 h-5" />} label="Feed" />
           <NavLink href="/dashboard/courses" icon={<BookOpenIcon className="w-5 h-5" />} label="Courses" />
-          <NavLink href="/dashboard/posts" icon={<ChatAlt2Icon className="w-5 h-5" />} label="Posts" />
-          <NavLink href="/dashboard/support" icon={<SupportIcon className="w-5 h-5" />} label="Support" />
+          <NavLink href="/dashboard/posts" icon={<ChatBubbleLeftRightIcon className="w-5 h-5" />} label="Posts" />
+          <NavLink href="/dashboard/support" icon={<LifebuoyIcon className="w-5 h-5" />} label="Support" />
           <button
             onClick={handleLogout}
             className="flex items-center gap-2 text-red-600 hover:underline text-sm mt-4"
           >
-            <LogoutIcon className="w-5 h-5" />
+            <ArrowLeftOnRectangleIcon className="w-5 h-5" />
             Logout
           </button>
         </div>
