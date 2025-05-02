@@ -46,6 +46,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     router.push("/login");
   };
 
+  // Render loading state while checking auth
   if (isAuthenticated === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -54,6 +55,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
+  // If not authenticated, redirect to login page
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
@@ -68,6 +70,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
+  // Render dashboard content when authenticated
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}

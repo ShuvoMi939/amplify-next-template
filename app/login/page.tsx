@@ -15,7 +15,7 @@ export default function SmartAuth() {
   const router = useRouter();
 
   const [step, setStep] = useState<
-    "emailCheck" | "loginPassword" | "otpInput" | "setPassword" | "forgotPasswordEmail" | "forgotPasswordOtp" | "loading"
+    "emailCheck" | "loginPassword" | "signupPassword" | "otpInput" | "setPassword" | "forgotPasswordEmail" | "forgotPasswordOtp" | "loading"
   >("emailCheck");
 
   const [email, setEmail] = useState("");
@@ -50,14 +50,8 @@ export default function SmartAuth() {
         setStep("otpInput");
         setResendTimer(60);
       } else if (err.name === "UserNotFoundException") {
-        await signUp({
-          username: email,
-          password: "DummyTemp123!",
-          options: { userAttributes: { email } },
-        });
-        setMessage("New account. OTP sent.");
-        setStep("otpInput");
-        setResendTimer(60);
+        setMessage("No account found. Please sign up.");
+        setStep("signupPassword");
       } else {
         setError("Something went wrong.");
         setStep("emailCheck");
@@ -65,19 +59,7 @@ export default function SmartAuth() {
     }
   };
 
-  const handleOtpSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    try {
-      await confirmSignUp({ username: email, confirmationCode: otp });
-      setMessage("Confirmed. Now set password.");
-      setStep("setPassword");
-    } catch (err: any) {
-      setError("OTP invalid or expired.");
-    }
-  };
-
-  const handleSetPassword = async (e: React.FormEvent) => {
+  const handleSignupPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     if (password !== confirmPassword) {
@@ -86,16 +68,29 @@ export default function SmartAuth() {
     }
 
     try {
-      await confirmResetPassword({
+      await signUp({
         username: email,
-        confirmationCode: otp,
-        newPassword: password,
+        password,
+        options: { userAttributes: { email } },
       });
-      setMessage("Password set. Logging in...");
+      setMessage("Account created. OTP sent.");
+      setStep("otpInput");
+      setResendTimer(60);
+    } catch (err: any) {
+      setError(err.message || "Signup failed.");
+    }
+  };
+
+  const handleOtpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    try {
+      await confirmSignUp({ username: email, confirmationCode: otp });
+      setMessage("Confirmed. Logging in...");
       await signIn({ username: email, password });
       router.push("/dashboard");
     } catch (err: any) {
-      setError(err.message || "Password setup failed.");
+      setError("OTP invalid or expired.");
     }
   };
 
@@ -120,7 +115,7 @@ export default function SmartAuth() {
     }
   };
 
-  // Forgot password flow
+  // Forgot password
   const handleForgotEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -162,8 +157,8 @@ export default function SmartAuth() {
         <h2 className="text-2xl font-bold text-gray-800 text-center">
           {step === "emailCheck" && "Welcome"}
           {step === "loginPassword" && "Login"}
+          {step === "signupPassword" && "Create Account"}
           {step === "otpInput" && "Verify OTP"}
-          {step === "setPassword" && "Set Password"}
           {step === "forgotPasswordEmail" && "Reset Password"}
           {step === "forgotPasswordOtp" && "Enter OTP to Reset"}
           {step === "loading" && "Loading..."}
@@ -217,7 +212,32 @@ export default function SmartAuth() {
           </form>
         )}
 
-        {/* OTP Input for SignUp */}
+        {/* Signup: User Sets Password */}
+        {step === "signupPassword" && (
+          <form onSubmit={handleSignupPassword} className="space-y-3">
+            <input
+              type="password"
+              placeholder="Create Password"
+              className="w-full px-4 py-2 border rounded"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <input
+              type="password"
+              placeholder="Confirm Password"
+              className="w-full px-4 py-2 border rounded"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+            />
+            <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+              Sign Up
+            </button>
+          </form>
+        )}
+
+        {/* OTP Input */}
         {step === "otpInput" && (
           <form onSubmit={handleOtpSubmit} className="space-y-3">
             <input
@@ -238,31 +258,6 @@ export default function SmartAuth() {
               className="w-full text-sm text-gray-600 hover:underline"
             >
               {resendTimer > 0 ? `Resend in ${resendTimer}s` : "Resend Code"}
-            </button>
-          </form>
-        )}
-
-        {/* Set Password after OTP */}
-        {step === "setPassword" && (
-          <form onSubmit={handleSetPassword} className="space-y-3">
-            <input
-              type="password"
-              placeholder="New Password"
-              className="w-full px-4 py-2 border rounded"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <input
-              type="password"
-              placeholder="Confirm Password"
-              className="w-full px-4 py-2 border rounded"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-            />
-            <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
-              Save Password
             </button>
           </form>
         )}
