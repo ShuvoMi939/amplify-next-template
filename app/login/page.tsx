@@ -1,341 +1,196 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import {
   signIn,
   signUp,
   confirmSignUp,
   resendSignUpCode,
-  resetPassword,
-  confirmResetPassword,
+  fetchAuthSession,
 } from "aws-amplify/auth";
+import { useRouter } from "next/navigation";
+
+type Step = "email" | "otp" | "set-password" | "login-password";
 
 export default function SmartAuth() {
   const router = useRouter();
-
-  const [step, setStep] = useState<
-    | "emailCheck"
-    | "verifyEmailOtp"
-    | "loginPassword"
-    | "setPassword"
-    | "forgotPasswordEmail"
-    | "forgotPasswordOtp"
-    | "loading"
-  >("emailCheck");
+  const [step, setStep] = useState<Step>("email");
 
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [otp, setOtp] = useState("");
-  const [message, setMessage] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [resendTimer, setResendTimer] = useState(0);
-  const [isNewUser, setIsNewUser] = useState(false);
+  const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    if (resendTimer > 0) {
-      const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [resendTimer]);
-
-  const handleEmailSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const checkEmail = async () => {
     setError("");
     setMessage("");
-    setStep("loading");
 
     try {
-      await signIn({ username: email, password: "dummy" });
+      // Try to sign in with a dummy password to check existence
+      await signIn({ username: email, password: "wrong-pass-123" });
     } catch (err: any) {
       if (err.name === "NotAuthorizedException") {
-        setStep("loginPassword");
+        setStep("login-password");
       } else if (err.name === "UserNotConfirmedException") {
-        setMessage("Please confirm your email. OTP resent.");
         await resendSignUpCode({ username: email });
-        setStep("verifyEmailOtp");
-        setResendTimer(60);
+        setStep("otp");
+        setMessage("Email found but not confirmed. OTP sent.");
       } else if (err.name === "UserNotFoundException") {
         await signUp({
           username: email,
-          password: "TempPassword123!",
+          password: "Dummy#1234", // Dummy password to register user temporarily
           options: { userAttributes: { email } },
         });
-        setMessage("New account detected. OTP sent to your email.");
-        setIsNewUser(true);
-        setStep("verifyEmailOtp");
-        setResendTimer(60);
+        setMessage("OTP sent to new user.");
+        setStep("otp");
       } else {
-        setError("Something went wrong.");
-        setStep("emailCheck");
+        setError(err.message || "Something went wrong.");
       }
     }
   };
 
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    try {
-      await confirmSignUp({ username: email, confirmationCode: otp });
-      setMessage("Email verified. Please set a password.");
-      setStep("setPassword");
-    } catch (err: any) {
-      setError("OTP is incorrect or expired.");
-    }
-  };
-
-  const handleSetPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-
-    try {
-      await confirmResetPassword({
-        username: email,
-        confirmationCode: otp,
-        newPassword: password,
-      });
-      setMessage("Password set. Logging in...");
-      await signIn({ username: email, password });
-      router.push("/dashboard");
-    } catch (err: any) {
-      setError(err.message || "Password setup failed.");
-    }
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    try {
-      await signIn({ username: email, password });
-      router.push("/dashboard");
-    } catch (err: any) {
-      setError("Login failed. Wrong password?");
-    }
-  };
-
-  const handleResendCode = async () => {
-    try {
-      await resendSignUpCode({ username: email });
-      setMessage("OTP resent.");
-      setResendTimer(60);
-    } catch {
-      setError("Resend failed.");
-    }
-  };
-
-  const handleForgotEmailSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const verifyOtp = async () => {
     setError("");
     setMessage("");
+
     try {
-      await resetPassword({ username: email });
-      setMessage("OTP sent. Check your email.");
-      setStep("forgotPasswordOtp");
-      setResendTimer(60);
+      await confirmSignUp({ username: email, confirmationCode: otp });
+      setStep("set-password");
+      setMessage("OTP verified. Set your password.");
     } catch (err: any) {
-      setError(err.message || "Failed to send reset code.");
+      setError(err.message || "OTP verification failed.");
     }
   };
 
-  const handleForgotOtpSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
+  const handleSetPassword = async () => {
+    setError("");
+    setMessage("");
 
     try {
-      await confirmResetPassword({
+      // Delete dummy user and recreate properly
+      await signUp({
         username: email,
-        confirmationCode: otp,
-        newPassword: password,
+        password,
+        options: { userAttributes: { email } },
       });
-      setMessage("Password reset. Logging in...");
+      await confirmSignUp({ username: email, confirmationCode: otp }); // reuse previous OTP
       await signIn({ username: email, password });
       router.push("/dashboard");
     } catch (err: any) {
-      setError(err.message || "Reset failed.");
+      setError(err.message || "Failed to create account.");
+    }
+  };
+
+  const handleLogin = async () => {
+    setError("");
+    setMessage("");
+
+    try {
+      await signIn({ username: email, password });
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err.message || "Login failed.");
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm p-6 bg-white rounded-xl shadow-md space-y-4">
-        <h2 className="text-2xl font-bold text-gray-800 text-center">
-          {{
-            emailCheck: "Welcome",
-            verifyEmailOtp: "Verify Email",
-            loginPassword: "Login",
-            setPassword: "Set Password",
-            forgotPasswordEmail: "Reset Password",
-            forgotPasswordOtp: "Reset with OTP",
-            loading: "Loading...",
-          }[step]}
+      <div className="w-full max-w-sm p-6 bg-white rounded-lg shadow-md">
+        <h2 className="text-xl font-semibold mb-4 text-center">
+          {step === "email" && "Enter your email"}
+          {step === "otp" && "Enter OTP sent to email"}
+          {step === "login-password" && "Enter your password"}
+          {step === "set-password" && "Set your password"}
         </h2>
 
-        {/* Email Entry */}
-        {step === "emailCheck" && (
-          <form onSubmit={handleEmailSubmit} className="space-y-3">
+        {step === "email" && (
+          <div className="space-y-4">
             <input
               type="email"
               placeholder="Email"
-              className="w-full px-4 py-2 border rounded"
+              className="w-full border px-4 py-2 rounded"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
-            <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
-              Continue
-            </button>
             <button
-              type="button"
-              onClick={() => setStep("forgotPasswordEmail")}
-              className="text-sm text-blue-600 hover:underline w-full text-right"
+              onClick={checkEmail}
+              className="w-full bg-blue-600 text-white py-2 rounded"
             >
-              Forgot password?
+              Submit
             </button>
-          </form>
+          </div>
         )}
 
-        {/* Verify Email OTP */}
-        {step === "verifyEmailOtp" && (
-          <form onSubmit={handleVerifyOtp} className="space-y-3">
+        {step === "otp" && (
+          <div className="space-y-4">
             <input
               type="text"
-              placeholder="OTP"
-              className="w-full px-4 py-2 border rounded"
+              placeholder="Enter OTP"
+              className="w-full border px-4 py-2 rounded"
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
               required
             />
-            <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
-              Verify
-            </button>
             <button
-              type="button"
-              onClick={handleResendCode}
-              disabled={resendTimer > 0}
-              className="w-full text-sm text-gray-600 hover:underline"
+              onClick={verifyOtp}
+              className="w-full bg-green-600 text-white py-2 rounded"
             >
-              {resendTimer > 0 ? `Resend in ${resendTimer}s` : "Resend Code"}
+              Submit OTP
             </button>
-          </form>
+          </div>
         )}
 
-        {/* Password Login */}
-        {step === "loginPassword" && (
-          <form onSubmit={handleLogin} className="space-y-3">
+        {step === "login-password" && (
+          <div className="space-y-4">
             <input
               type="password"
               placeholder="Password"
-              className="w-full px-4 py-2 border rounded"
+              className="w-full border px-4 py-2 rounded"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-            <button className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">
+            <button
+              onClick={handleLogin}
+              className="w-full bg-blue-600 text-white py-2 rounded"
+            >
               Login
             </button>
-            <button
-              type="button"
-              onClick={() => setStep("forgotPasswordEmail")}
-              className="text-sm text-blue-600 hover:underline w-full text-right"
-            >
-              Forgot password?
-            </button>
-          </form>
+          </div>
         )}
 
-        {/* Set Password */}
-        {step === "setPassword" && (
-          <form onSubmit={handleSetPassword} className="space-y-3">
+        {step === "set-password" && (
+          <div className="space-y-4">
             <input
               type="password"
-              placeholder="New Password"
-              className="w-full px-4 py-2 border rounded"
+              placeholder="Set Password"
+              className="w-full border px-4 py-2 rounded"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-            <input
-              type="password"
-              placeholder="Confirm Password"
-              className="w-full px-4 py-2 border rounded"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-            />
-            <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
-              Save Password
-            </button>
-          </form>
-        )}
-
-        {/* Forgot Password Email */}
-        {step === "forgotPasswordEmail" && (
-          <form onSubmit={handleForgotEmailSubmit} className="space-y-3">
-            <input
-              type="email"
-              placeholder="Email"
-              className="w-full px-4 py-2 border rounded"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
-              Send Reset Code
-            </button>
             <button
-              type="button"
-              onClick={() => setStep("emailCheck")}
-              className="w-full text-sm text-gray-600 hover:underline text-center"
+              onClick={handleSetPassword}
+              className="w-full bg-green-600 text-white py-2 rounded"
             >
-              Back to Login
+              Save Password & Login
             </button>
-          </form>
+          </div>
         )}
 
-        {/* Forgot Password OTP */}
-        {step === "forgotPasswordOtp" && (
-          <form onSubmit={handleForgotOtpSubmit} className="space-y-3">
-            <input
-              type="text"
-              placeholder="OTP"
-              className="w-full px-4 py-2 border rounded"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              required
-            />
-            <input
-              type="password"
-              placeholder="New Password"
-              className="w-full px-4 py-2 border rounded"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <input
-              type="password"
-              placeholder="Confirm Password"
-              className="w-full px-4 py-2 border rounded"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-            />
-            <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
-              Reset Password
-            </button>
-          </form>
-        )}
+        {error && <p className="text-sm text-red-600 mt-4">{error}</p>}
+        {message && <p className="text-sm text-green-600 mt-4">{message}</p>}
 
-        {/* Error & Message */}
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        {message && <p className="text-sm text-green-600">{message}</p>}
+        <div className="text-center text-sm mt-6">
+          <button
+            onClick={() => router.push("/reset-password")}
+            className="text-blue-500 hover:underline"
+          >
+            Forgot Password?
+          </button>
+        </div>
       </div>
     </div>
   );

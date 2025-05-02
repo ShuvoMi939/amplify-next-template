@@ -15,30 +15,80 @@ const Header = () => {
     setIsSubMenuOpen(false);
   };
 
+  const handleSearchClick = () => {
+    setIsSearchOpen(!isSearchOpen);
+    if (isMenuOpen) setIsMenuOpen(false); // Close menu if search is opened
+  };
+
+  const handleMenuClick = () => {
+    setIsMenuOpen(!isMenuOpen);
+    if (isSearchOpen) setIsSearchOpen(false); // Close search if menu is opened
+  };
+
   return (
     <header className="bg-white border-b shadow-sm sticky top-0 z-50">
       <div className="max-w-screen-xl mx-auto flex justify-between items-center px-4 py-3">
         {/* Logo */}
         <div className="flex items-center space-x-3">
           <img src="/favicon.ico" alt="Logo" className="h-8 w-8" />
-          <Link href="/" className="text-2xl font-bold text-blue-600">Nirdeshona</Link>
+          <Link href="/" className="text-2xl font-bold text-blue-600">
+            Nirdeshona
+          </Link>
         </div>
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-6">
-          <Link href="/" className="hover:text-blue-600 text-lg">Home</Link>
-          <Link href="/about" className="hover:text-blue-600 text-lg">About</Link>
-          <Link href="/services" className="hover:text-blue-600 text-lg">Services</Link>
-          <Link href="/contact" className="hover:text-blue-600 text-lg">Contact</Link>
+          <Link href="/" className="hover:text-blue-600 text-lg">
+            Home
+          </Link>
+          <Link href="/about" className="hover:text-blue-600 text-lg">
+            About
+          </Link>
+          <Link href="/services" className="hover:text-blue-600 text-lg">
+            Services
+          </Link>
+          <Link href="/contact" className="hover:text-blue-600 text-lg">
+            Contact
+          </Link>
           <div className="relative group">
             <button className="hover:text-blue-600 text-lg">Dashboard</button>
             <div className="absolute hidden group-hover:block bg-white shadow-lg mt-2 rounded p-2 space-y-2 z-10">
-              <Link href="/dashboard/profile" className="block hover:text-blue-600 text-sm">Profile</Link>
-              <Link href="/dashboard/settings" className="block hover:text-blue-600 text-sm">Settings</Link>
-              <Link href="/dashboard/feed" className="block hover:text-blue-600 text-sm">Feed</Link>
-              <Link href="/dashboard/courses" className="block hover:text-blue-600 text-sm">Courses</Link>
-              <Link href="/dashboard/posts" className="block hover:text-blue-600 text-sm">Posts</Link>
-              <Link href="/dashboard/support" className="block hover:text-blue-600 text-sm">Support</Link>
+              <Link
+                href="/dashboard/profile"
+                className="block hover:text-blue-600 text-sm"
+              >
+                Profile
+              </Link>
+              <Link
+                href="/dashboard/settings"
+                className="block hover:text-blue-600 text-sm"
+              >
+                Settings
+              </Link>
+              <Link
+                href="/dashboard/feed"
+                className="block hover:text-blue-600 text-sm"
+              >
+                Feed
+              </Link>
+              <Link
+                href="/dashboard/courses"
+                className="block hover:text-blue-600 text-sm"
+              >
+                Courses
+              </Link>
+              <Link
+                href="/dashboard/posts"
+                className="block hover:text-blue-600 text-sm"
+              >
+                Posts
+              </Link>
+              <Link
+                href="/dashboard/support"
+                className="block hover:text-blue-600 text-sm"
+              >
+                Support
+              </Link>
             </div>
           </div>
 
@@ -63,7 +113,7 @@ const Header = () => {
         {/* Mobile controls */}
         <div className="md:hidden flex items-center space-x-4">
           {/* Mobile search icon */}
-          <button onClick={() => setIsSearchOpen(!isSearchOpen)}>
+          <button onClick={handleSearchClick}>
             <FaSearch className="text-xl text-gray-700" />
           </button>
 
@@ -73,7 +123,7 @@ const Header = () => {
           </Link>
 
           {/* Mobile menu toggle */}
-          <button onClick={() => setIsMenuOpen(!isMenuOpen)}>
+          <button onClick={handleMenuClick}>
             {isMenuOpen ? (
               <FaTimes className="text-xl text-gray-700" />
             ) : (
@@ -83,46 +133,112 @@ const Header = () => {
         </div>
       </div>
 
-      {/* Mobile search bar */}
+      {/* Mobile search bar (below the header, no overlay) */}
       {isSearchOpen && (
-        <div className="md:hidden px-4 pb-2">
-          <input
-            type="text"
-            placeholder="Search..."
-            className="w-full p-2 border rounded text-sm"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+        <div className="md:hidden w-full bg-white shadow-sm border-t z-30 mt-3">
+          <div className="flex justify-center items-center px-5 py-3">
+            <input
+              type="text"
+              placeholder="Search..."
+              className="w-full p-2 border rounded text-sm"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
         </div>
       )}
 
-      {/* Mobile nav menu */}
+      {/* Mobile nav menu (below the header, no overlay) */}
       {isMenuOpen && (
-        <div className="md:hidden bg-white px-4 pb-4 shadow-md">
-          <nav className="space-y-3 text-sm">
-            <Link href="/" className="block hover:text-blue-600" onClick={handleNavClick}>Home</Link>
-            <Link href="/about" className="block hover:text-blue-600" onClick={handleNavClick}>About</Link>
-            <Link href="/services" className="block hover:text-blue-600" onClick={handleNavClick}>Services</Link>
-            <Link href="/contact" className="block hover:text-blue-600" onClick={handleNavClick}>Contact</Link>
-            <div>
-              <button
-                onClick={() => setIsSubMenuOpen(!isSubMenuOpen)}
-                className="block w-full text-left hover:text-blue-600"
-              >
-                Dashboard
-              </button>
-              {isSubMenuOpen && (
-                <div className="pl-4 mt-2 space-y-2">
-                  <Link href="/dashboard/profile" className="block hover:text-blue-600" onClick={handleNavClick}>Profile</Link>
-                  <Link href="/dashboard/settings" className="block hover:text-blue-600" onClick={handleNavClick}>Settings</Link>
-                  <Link href="/dashboard/feed" className="block hover:text-blue-600" onClick={handleNavClick}>Feed</Link>
-                  <Link href="/dashboard/courses" className="block hover:text-blue-600" onClick={handleNavClick}>Courses</Link>
-                  <Link href="/dashboard/posts" className="block hover:text-blue-600" onClick={handleNavClick}>Posts</Link>
-                  <Link href="/dashboard/support" className="block hover:text-blue-600" onClick={handleNavClick}>Support</Link>
+        <div className="md:hidden w-full bg-white shadow-sm border-t z-30 mt-3">
+          <div className="flex justify-center items-center py-6">
+            <div className="w-full px-5 space-y-3 text-sm">
+              <nav>
+                <Link
+                  href="/"
+                  className="block hover:text-blue-600"
+                  onClick={handleNavClick}
+                >
+                  Home
+                </Link>
+                <Link
+                  href="/about"
+                  className="block hover:text-blue-600"
+                  onClick={handleNavClick}
+                >
+                  About
+                </Link>
+                <Link
+                  href="/services"
+                  className="block hover:text-blue-600"
+                  onClick={handleNavClick}
+                >
+                  Services
+                </Link>
+                <Link
+                  href="/contact"
+                  className="block hover:text-blue-600"
+                  onClick={handleNavClick}
+                >
+                  Contact
+                </Link>
+                <div>
+                  <button
+                    onClick={() => setIsSubMenuOpen(!isSubMenuOpen)}
+                    className="block w-full text-left hover:text-blue-600"
+                  >
+                    Dashboard
+                  </button>
+                  {isSubMenuOpen && (
+                    <div className="pl-4 mt-2 space-y-2">
+                      <Link
+                        href="/dashboard/profile"
+                        className="block hover:text-blue-600"
+                        onClick={handleNavClick}
+                      >
+                        Profile
+                      </Link>
+                      <Link
+                        href="/dashboard/settings"
+                        className="block hover:text-blue-600"
+                        onClick={handleNavClick}
+                      >
+                        Settings
+                      </Link>
+                      <Link
+                        href="/dashboard/feed"
+                        className="block hover:text-blue-600"
+                        onClick={handleNavClick}
+                      >
+                        Feed
+                      </Link>
+                      <Link
+                        href="/dashboard/courses"
+                        className="block hover:text-blue-600"
+                        onClick={handleNavClick}
+                      >
+                        Courses
+                      </Link>
+                      <Link
+                        href="/dashboard/posts"
+                        className="block hover:text-blue-600"
+                        onClick={handleNavClick}
+                      >
+                        Posts
+                      </Link>
+                      <Link
+                        href="/dashboard/support"
+                        className="block hover:text-blue-600"
+                        onClick={handleNavClick}
+                      >
+                        Support
+                      </Link>
+                    </div>
+                  )}
                 </div>
-              )}
+              </nav>
             </div>
-          </nav>
+          </div>
         </div>
       )}
     </header>
