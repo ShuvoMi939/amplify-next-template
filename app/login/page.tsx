@@ -15,7 +15,13 @@ export default function SmartAuth() {
   const router = useRouter();
 
   const [step, setStep] = useState<
-    "emailCheck" | "loginPassword" | "signupPassword" | "otpInput" | "setPassword" | "forgotPasswordEmail" | "forgotPasswordOtp" | "loading"
+    | "emailCheck"
+    | "verifyEmailOtp"
+    | "loginPassword"
+    | "setPassword"
+    | "forgotPasswordEmail"
+    | "forgotPasswordOtp"
+    | "loading"
   >("emailCheck");
 
   const [email, setEmail] = useState("");
@@ -25,6 +31,7 @@ export default function SmartAuth() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [resendTimer, setResendTimer] = useState(0);
+  const [isNewUser, setIsNewUser] = useState(false);
 
   useEffect(() => {
     if (resendTimer > 0) {
@@ -45,13 +52,20 @@ export default function SmartAuth() {
       if (err.name === "NotAuthorizedException") {
         setStep("loginPassword");
       } else if (err.name === "UserNotConfirmedException") {
-        setMessage("Unconfirmed account. OTP sent.");
+        setMessage("Please confirm your email. OTP resent.");
         await resendSignUpCode({ username: email });
-        setStep("otpInput");
+        setStep("verifyEmailOtp");
         setResendTimer(60);
       } else if (err.name === "UserNotFoundException") {
-        setMessage("No account found. Please sign up.");
-        setStep("signupPassword");
+        await signUp({
+          username: email,
+          password: "TempPassword123!",
+          options: { userAttributes: { email } },
+        });
+        setMessage("New account detected. OTP sent to your email.");
+        setIsNewUser(true);
+        setStep("verifyEmailOtp");
+        setResendTimer(60);
       } else {
         setError("Something went wrong.");
         setStep("emailCheck");
@@ -59,7 +73,19 @@ export default function SmartAuth() {
     }
   };
 
-  const handleSignupPassword = async (e: React.FormEvent) => {
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    try {
+      await confirmSignUp({ username: email, confirmationCode: otp });
+      setMessage("Email verified. Please set a password.");
+      setStep("setPassword");
+    } catch (err: any) {
+      setError("OTP is incorrect or expired.");
+    }
+  };
+
+  const handleSetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     if (password !== confirmPassword) {
@@ -68,29 +94,16 @@ export default function SmartAuth() {
     }
 
     try {
-      await signUp({
+      await confirmResetPassword({
         username: email,
-        password,
-        options: { userAttributes: { email } },
+        confirmationCode: otp,
+        newPassword: password,
       });
-      setMessage("Account created. OTP sent.");
-      setStep("otpInput");
-      setResendTimer(60);
-    } catch (err: any) {
-      setError(err.message || "Signup failed.");
-    }
-  };
-
-  const handleOtpSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    try {
-      await confirmSignUp({ username: email, confirmationCode: otp });
-      setMessage("Confirmed. Logging in...");
+      setMessage("Password set. Logging in...");
       await signIn({ username: email, password });
       router.push("/dashboard");
     } catch (err: any) {
-      setError("OTP invalid or expired.");
+      setError(err.message || "Password setup failed.");
     }
   };
 
@@ -115,7 +128,6 @@ export default function SmartAuth() {
     }
   };
 
-  // Forgot password
   const handleForgotEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -155,13 +167,15 @@ export default function SmartAuth() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-sm p-6 bg-white rounded-xl shadow-md space-y-4">
         <h2 className="text-2xl font-bold text-gray-800 text-center">
-          {step === "emailCheck" && "Welcome"}
-          {step === "loginPassword" && "Login"}
-          {step === "signupPassword" && "Create Account"}
-          {step === "otpInput" && "Verify OTP"}
-          {step === "forgotPasswordEmail" && "Reset Password"}
-          {step === "forgotPasswordOtp" && "Enter OTP to Reset"}
-          {step === "loading" && "Loading..."}
+          {{
+            emailCheck: "Welcome",
+            verifyEmailOtp: "Verify Email",
+            loginPassword: "Login",
+            setPassword: "Set Password",
+            forgotPasswordEmail: "Reset Password",
+            forgotPasswordOtp: "Reset with OTP",
+            loading: "Loading...",
+          }[step]}
         </h2>
 
         {/* Email Entry */}
@@ -184,6 +198,31 @@ export default function SmartAuth() {
               className="text-sm text-blue-600 hover:underline w-full text-right"
             >
               Forgot password?
+            </button>
+          </form>
+        )}
+
+        {/* Verify Email OTP */}
+        {step === "verifyEmailOtp" && (
+          <form onSubmit={handleVerifyOtp} className="space-y-3">
+            <input
+              type="text"
+              placeholder="OTP"
+              className="w-full px-4 py-2 border rounded"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              required
+            />
+            <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+              Verify
+            </button>
+            <button
+              type="button"
+              onClick={handleResendCode}
+              disabled={resendTimer > 0}
+              className="w-full text-sm text-gray-600 hover:underline"
+            >
+              {resendTimer > 0 ? `Resend in ${resendTimer}s` : "Resend Code"}
             </button>
           </form>
         )}
@@ -212,12 +251,12 @@ export default function SmartAuth() {
           </form>
         )}
 
-        {/* Signup: User Sets Password */}
-        {step === "signupPassword" && (
-          <form onSubmit={handleSignupPassword} className="space-y-3">
+        {/* Set Password */}
+        {step === "setPassword" && (
+          <form onSubmit={handleSetPassword} className="space-y-3">
             <input
               type="password"
-              placeholder="Create Password"
+              placeholder="New Password"
               className="w-full px-4 py-2 border rounded"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -232,37 +271,12 @@ export default function SmartAuth() {
               required
             />
             <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
-              Sign Up
+              Save Password
             </button>
           </form>
         )}
 
-        {/* OTP Input */}
-        {step === "otpInput" && (
-          <form onSubmit={handleOtpSubmit} className="space-y-3">
-            <input
-              type="text"
-              placeholder="OTP"
-              className="w-full px-4 py-2 border rounded"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              required
-            />
-            <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
-              Confirm OTP
-            </button>
-            <button
-              type="button"
-              onClick={handleResendCode}
-              disabled={resendTimer > 0}
-              className="w-full text-sm text-gray-600 hover:underline"
-            >
-              {resendTimer > 0 ? `Resend in ${resendTimer}s` : "Resend Code"}
-            </button>
-          </form>
-        )}
-
-        {/* Forgot Password - Email */}
+        {/* Forgot Password Email */}
         {step === "forgotPasswordEmail" && (
           <form onSubmit={handleForgotEmailSubmit} className="space-y-3">
             <input
@@ -286,7 +300,7 @@ export default function SmartAuth() {
           </form>
         )}
 
-        {/* Forgot Password - OTP & Set */}
+        {/* Forgot Password OTP */}
         {step === "forgotPasswordOtp" && (
           <form onSubmit={handleForgotOtpSubmit} className="space-y-3">
             <input
