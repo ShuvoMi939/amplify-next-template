@@ -3,6 +3,10 @@
 import { useState, useEffect } from "react";
 import { resetPassword, confirmResetPassword } from "aws-amplify/auth";
 import { useRouter } from "next/navigation";
+import {
+  EyeIcon,
+  EyeSlashIcon,
+} from "@heroicons/react/24/outline";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -15,6 +19,8 @@ export default function ResetPasswordPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [resendTimer, setResendTimer] = useState(0);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     if (resendTimer > 0) {
@@ -74,12 +80,12 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <div className="w-full max-w-sm p-8 bg-white rounded-lg shadow-lg">
-        <h1 className="text-2xl font-bold text-center mb-4">
+    <div className="min-h-fit flex items-center justify-center bg-gray-50 px-4 py-4">
+      <div className="w-full max-w-sm p-8 bg-white rounded-xl shadow-md">
+        <h2 className="text-2xl text-center font-bold text-gray-800 mb-2">
           {step === "request" ? "Reset Password 🔐" : "Set New Password"}
-        </h1>
-        <p className="text-sm text-gray-500 text-center mb-6">
+        </h2>
+        <p className="text-sm text-center text-gray-500 mb-6">
           {step === "request"
             ? "We'll send a code to your email."
             : "Enter the code and your new password."}
@@ -90,14 +96,14 @@ export default function ResetPasswordPage() {
             <input
               type="email"
               placeholder="Email"
-              className="w-full px-4 py-2 border rounded-lg"
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
+              className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
             >
               Send Reset Code
             </button>
@@ -109,30 +115,59 @@ export default function ResetPasswordPage() {
             <input
               type="text"
               placeholder="Verification Code"
-              className="w-full px-4 py-2 border rounded-lg"
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
               value={code}
               onChange={(e) => setCode(e.target.value)}
               required
             />
-            <input
-              type="password"
-              placeholder="New Password"
-              className="w-full px-4 py-2 border rounded-lg"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              required
-            />
-            <input
-              type="password"
-              placeholder="Confirm New Password"
-              className="w-full px-4 py-2 border rounded-lg"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-            />
+            <div className="relative">
+              <input
+                type={showNewPassword ? "text" : "password"}
+                placeholder="New Password"
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 pr-12"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowNewPassword(!showNewPassword)}
+                className="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-600"
+                tabIndex={-1}
+              >
+                {showNewPassword ? (
+                  <EyeSlashIcon className="h-5 w-5" />
+                ) : (
+                  <EyeIcon className="h-5 w-5" />
+                )}
+              </button>
+            </div>
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Confirm New Password"
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 pr-12"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-600"
+                tabIndex={-1}
+              >
+                {showConfirmPassword ? (
+                  <EyeSlashIcon className="h-5 w-5" />
+                ) : (
+                  <EyeIcon className="h-5 w-5" />
+                )}
+              </button>
+            </div>
+
             <button
               type="submit"
-              className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
+              className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition"
             >
               Update Password
             </button>
@@ -168,7 +203,7 @@ export default function ResetPasswordPage() {
           </p>
         )}
 
-        <div className="mt-6 text-center text-sm space-y-1">
+        <div className="text-center text-sm space-y-1 pt-6 mt-6 -mx-8 border-t border-gray-300">
           <button
             onClick={() => router.push("/login")}
             className="text-blue-500 hover:underline"

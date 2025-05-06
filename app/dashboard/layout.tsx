@@ -83,7 +83,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <main className="flex-1 p-4 md:p-8 overflow-y-auto">{children}</main>
 
       {/* Bottom nav for mobile */}
-      <nav className="fixed bottom-0 left-0 w-full bg-white border-t flex justify-around items-center md:hidden py-2 shadow z-50">
+      <nav className="fixed bottom-0 left-0 w-full bg-white border-t flex justify-around items-center md:hidden py-4 shadow z-50">
         <BottomNavLink href="/dashboard" icon={<RectangleStackIcon className="w-6 h-6" />} />
         <BottomNavLink href="/dashboard/profile" icon={<UserIcon className="w-6 h-6" />} />
         <BottomNavLink href="/dashboard/feed" icon={<ChatBubbleLeftRightIcon className="w-6 h-6" />} />
@@ -99,7 +99,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Popup above bottom nav */}
       {showMore && (
-        <div className="fixed bottom-10 left-0 w-full bg-white border-t z-50">
+        <div className="fixed bottom-12 left-0 w-full bg-white border-t z-50">
           <div className="flex justify-between items-center px-4 py-2 border-b">
             <span className="text-sm font-medium text-gray-700">More Options</span>
             <button onClick={() => setShowMore(false)}>

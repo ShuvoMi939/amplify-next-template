@@ -33,7 +33,7 @@ export default function RootLayout({
     <html lang="en" className={anekBangla.className}>
       <body className={`${inter.className} ${anekBangla.className}`}>
         <Header />
-        <main className="min-h-screen">{children}</main>
+        <main className="min-h-fit">{children}</main>
         <Footer />
       </body>
     </html>
