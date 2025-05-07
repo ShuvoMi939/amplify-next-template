@@ -7,6 +7,7 @@ import Footer from "./components/Footer";
 import { Inter, Anek_Bangla } from "next/font/google";
 import "./globals.css";
 
+
 // Configure Amplify once
 Amplify.configure(awsExports);
 
