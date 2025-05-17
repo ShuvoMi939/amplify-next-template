@@ -16,5 +16,18 @@
         "nirdeshonab7ba4a3b": {}
       }
     }
+  },
+  "main": {
+    "categories": {
+      "auth": {
+        "nirdeshonab7ba4a3b": {},
+        "authNirdeshona": {}
+      },
+      "function": {
+        "authNirdeshonaPostConfirmation": {
+          "GROUP": "Subscriber"
+        }
+      }
+    }
   }
 }

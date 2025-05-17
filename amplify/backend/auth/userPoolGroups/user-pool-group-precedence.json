@@ -1,0 +1,26 @@
+[
+  {
+    "groupName": "Admin",
+    "precedence": 1
+  },
+  {
+    "groupName": "Moderator",
+    "precedence": 2
+  },
+  {
+    "groupName": "PlatinumUser",
+    "precedence": 3
+  },
+  {
+    "groupName": "GoldUser",
+    "precedence": 4
+  },
+  {
+    "groupName": "SilverUser",
+    "precedence": 5
+  },
+  {
+    "groupName": "Subscriber",
+    "precedence": 6
+  }
+]
